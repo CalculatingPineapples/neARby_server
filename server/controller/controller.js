@@ -71,11 +71,13 @@ function getPlaces(req, res) {
           placesObj.push(place);
         });
         // send back data to client side
-        resolve(res.send(placesObj));
+        resolve(res.send(placesObj.splice(0, 1)));
       }
     });
   });
 }
+
+var instaGram = function()
 
 module.exports = {
   getPlaces,
