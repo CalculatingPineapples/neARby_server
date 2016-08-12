@@ -44,7 +44,7 @@ function getPlaces(req, res) {
     initLon = req.body.longitude;
   }
   var googleType = '&type=restaurant';
-  var googleKeyword = '';
+  var googleKeyword = '&type=indian';
   if (req.body.type !== undefined) {
     googleType = `&type=${req.body.type}`;
   }
@@ -52,7 +52,7 @@ function getPlaces(req, res) {
     googleKeyword = `&keyword=${req.body.keyword}`;
   }
   // call to google API to get locations around
-  var radius = 30;
+  var radius = 100;
   var apiKey = 'AIzaSyDXk9vLjijFncKwQ-EeTW0tyiKpn7RRABU';
   var link = `https://maps.googleapis.com/maps/api/place/search/json?location=${req.body.latitude},${req.body.longitude}&radius=${radius}${googleType}${googleKeyword}&key=${apiKey}`;
   // var link = `https://maps.googleapis.com/maps/api/place/search/json?location=${req.body.latitude},${req.body.longitude}&radius=${radius}&key=${apiKey}`;
