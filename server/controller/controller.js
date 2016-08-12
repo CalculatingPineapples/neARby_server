@@ -55,12 +55,11 @@ function getPlaces(req, res) {
         // iterate over the get request to extract data we want
         googleResults.results.forEach(function(result, index) {
           // calculate each of the distances in meters
-          if(index !== 0) {
+          if (index !== 0) {
             var googleLat = findXDistance(initLat, result.geometry.location.lat);
             var distanceFromInit = hypotenuseDistance(initLat, initLon, result.geometry.location.lat, result.geometry.location.lng);
             var googleDistance = hypotenuseDistance(req.body.latitude, req.body.longitude, result.geometry.location.lat, result.geometry.location.lng);
             var googleLon = findYDistance(distanceFromInit, googleLat, initLon, req.body.longitude);
-            
             googleDistance = Math.floor(googleDistance * 3.28084);
             // populate an object with all necessary information
             var place = {
@@ -82,7 +81,7 @@ function getPlaces(req, res) {
   });
 }
 
-var instaGram = function()
+// var instaGram = function()
 
 module.exports = {
   getPlaces,
