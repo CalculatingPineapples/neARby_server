@@ -43,10 +43,18 @@ function getPlaces(req, res) {
     initLat = req.body.latitude;
     initLon = req.body.longitude;
   }
+  var googleType = '&type=liquor_store';
+  var googleKeyword = '';
+  if (req.body.type !== undefined) {
+    googleType = `&type=${req.body.type}`;
+  }
+  if (req.body.keyword !== undefined) {
+    googleKeyword = `&keyword=${req.body.keyword}`;
+  }
   // call to google API to get locations around
   var radius = 30;
   var apiKey = 'AIzaSyDXk9vLjijFncKwQ-EeTW0tyiKpn7RRABU';
-  var link = `https://maps.googleapis.com/maps/api/place/search/json?location=${req.body.latitude},${req.body.longitude}&radius=${radius}&key=${apiKey}`;
+  var link = `https://maps.googleapis.com/maps/api/place/search/json?location=${req.body.latitude},${req.body.longitude}&radius=${radius}${googleType}${googleKeyword}&key=${apiKey}`;
   return new Promise((resolve, reject) => {
     request(link, function(error, response, body) {
       if (!error && response.statusCode === 200) {
@@ -74,14 +82,11 @@ function getPlaces(req, res) {
         });
 
         // send back data to client side
-        console.log(placesObj);
         resolve(res.send(placesObj));
       }
     });
   });
 }
-
-// var instaGram = function()
 
 module.exports = {
   getPlaces,
