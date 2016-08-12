@@ -42,19 +42,22 @@ function getPlaces(req, res) {
     initLat = req.body.latitude;
     initLon = req.body.longitude;
   }
-  var googleType = '&type=restaurant';
-  var googleKeyword = '&type=indian';
+  var googleType = '';
+  var googleKeyword = '';
+  var googleOpenNow = '';
   if (req.body.type !== undefined) {
     googleType = `&type=${req.body.type}`;
   }
   if (req.body.keyword !== undefined) {
     googleKeyword = `&keyword=${req.body.keyword}`;
   }
+  if (req.body.openNow !== undefined) {
+    googleOpenNow = '&opennow';
+  }
   // call to google API to get locations around
-  var radius = 100;
+  var radius = 1000;
   var apiKey = 'AIzaSyDXk9vLjijFncKwQ-EeTW0tyiKpn7RRABU';
-  var link = `https://maps.googleapis.com/maps/api/place/search/json?location=${req.body.latitude},${req.body.longitude}&radius=${radius}${googleType}${googleKeyword}&key=${apiKey}`;
-  // var link = `https://maps.googleapis.com/maps/api/place/search/json?location=${req.body.latitude},${req.body.longitude}&radius=${radius}&key=${apiKey}`;
+  var link = `https://maps.googleapis.com/maps/api/place/search/json?location=${req.body.latitude},${req.body.longitude}&radius=${radius}${googleKeyword}${googleOpenNow}${googleType}&key=${apiKey}`;
   return new Promise((resolve, reject) => {
     request(link, function(error, response, body) {
       if (!error && response.statusCode === 200) {
@@ -63,7 +66,6 @@ function getPlaces(req, res) {
         // iterate over the get request to extract data we want
         googleResults.results.forEach(function(result, index) {
           // calculate each of the distances in meters
-          if (index !== 0) {
             var googleLat = findXDistance(initLat, result.geometry.location.lat);
             var distanceFromInit = hypotenuseDistance(initLat, initLon, result.geometry.location.lat, result.geometry.location.lng);
             var googleDistance = hypotenuseDistance(req.body.latitude, req.body.longitude, result.geometry.location.lat, result.geometry.location.lng);
@@ -78,7 +80,6 @@ function getPlaces(req, res) {
             img: result.icon,
             };
             placesObj.push(place);
-          }
         });
 
         // send back data to client side
