@@ -58,6 +58,8 @@ function getPlaces(req, res) {
           var distanceFromInit = hypotenuseDistance(initLat, initLon, result.geometry.location.lat, result.geometry.location.lng);
           var googleDistance = hypotenuseDistance(req.body.latitude, req.body.longitude, result.geometry.location.lat, result.geometry.location.lng);
           var googleLon = findYDistance(distanceFromInit, googleLat, initLon, req.body.longitude);
+          
+          googleDistance = Math.floor(googleDistance * 3.28084);
           // populate an object with all necessary information
           var place = {
           name: result.name,
