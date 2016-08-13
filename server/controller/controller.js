@@ -35,7 +35,7 @@ function findYDistance(hypotenuse, xDistance, initLon, newLon) {
   return (newLon - initLon > 0 ) ? yDistance : -1 * yDistance;
 }
 
-function getPlaces(req, res) {
+function getEvents(req, res) {
   // check to see if it is the initial location
   if (req.body.threejsLat === 0 && req.body.threejsLon === 0) {
     // if so recored the initial position
@@ -89,6 +89,45 @@ function getPlaces(req, res) {
   });
 }
 
+function getPlaces(req, res) {
+  if (req.body.threejsLat === 0 && req.body.threejsLon === 0) {
+    // if so recored the initial position
+    initLat = req.body.latitude;
+    initLon = req.body.longitude;
+  }
+  var date = 'Future';
+  var eventsApiKey = 'CbNBBV9Qm4wTwMpg';
+  var radius = 1 / 2;
+  var eventsApiLink = `http://api.eventful.com/json/events/search?...&location=${req.body.latitude},${req.body.longitude}&within=${radius}&units=miles&date=${date}&${eventsApiKey}`;
+  return new Promise((resolve, reject) => {
+    request(eventsApiLink, function(error, response, body) {
+      if (!error && response.statusCode === 200) {
+        var eventObj = [];
+        var eventsResults = JSON.parse(body);
+
+        eventsResults.events.event.forEach(function(event) {
+          var eventLat = findXDistance(initLat, event.latitude);
+          var distanceFromInit = hypotenuseDistance(initLat, initLon, event.latitude, event.longitude);
+          var eventDistance = hypotenuseDistance(req.body.latitude, req.body.longitude, event.latitude, event.longitude);
+          var eventLon = findYDistance(distanceFromInit, eventLat, initLon, req.body.longitude);
+          eventDistance = Math.floor(eventDistance * 3.28084);
+
+          var place = {
+          name: event.title,
+          lat: eventLat,
+          lon: eventLon,
+          distance: eventDistance,
+          };
+          eventObj.push(place);
+        });
+        resolve(res.send(eventObj));
+      }
+    });
+
+  });
+}
+
 module.exports = {
   getPlaces,
+  getEvents
 };
