@@ -97,8 +97,10 @@ function getPlaces(req, res) {
   }
   var date = 'Future';
   var eventsApiKey = 'CbNBBV9Qm4wTwMpg';
-  var radius = 1 / 2;
-  var eventsApiLink = `http://api.eventful.com/json/events/search?...&location=${req.body.latitude},${req.body.longitude}&within=${radius}&units=miles&date=${date}&${eventsApiKey}`;
+  var radius = 1;
+  var eventsApiLink = `http://api.eventful.com/json/events/search?...&location=${req.body.latitude},${req.body.longitude}&within=${radius}&units=miles&date=${date}&app_key=${eventsApiKey}`;
+  // http://api.eventful.com/json/events/search?...&location=37.783537,-122.409003&within=.25&units=miles&date=Future&CbNBBV9Qm4wTwMpg
+  // http://api.eventful.com/json/events/search?...&location=37.783537,-122.409003&within=.25&units=miles&date=Future&app_key=CbNBBV9Qm4wTwMpg
   return new Promise((resolve, reject) => {
     request(eventsApiLink, function(error, response, body) {
       if (!error && response.statusCode === 200) {
