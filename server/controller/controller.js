@@ -38,7 +38,6 @@ function findYDistance(hypotenuse, xDistance, initLon, newLon) {
 function getPlaces(req, res) {
   // check to see if it is the initial location
   if (req.body.threejsLat === 0 && req.body.threejsLon === 0) {
-    // if so recored the initial position
     initLat = req.body.latitude;
     initLon = req.body.longitude;
   }
@@ -56,10 +55,10 @@ function getPlaces(req, res) {
   }
   // call to google API to get locations around
   var radius = 1000;
-  var apiKey = 'AIzaSyDXk9vLjijFncKwQ-EeTW0tyiKpn7RRABU';
-  var link = `https://maps.googleapis.com/maps/api/place/search/json?location=${req.body.latitude},${req.body.longitude}&radius=${radius}${googleKeyword}${googleOpenNow}${googleType}&key=${apiKey}`;
+  var googleApiKey = 'AIzaSyDXk9vLjijFncKwQ-EeTW0tyiKpn7RRABU';
+  var googleApiLink = `https://maps.googleapis.com/maps/api/place/search/json?location=${req.body.latitude},${req.body.longitude}&radius=${radius}${googleKeyword}${googleOpenNow}${googleType}&key=${googleApiKey}`;
   return new Promise((resolve, reject) => {
-    request(link, function(error, response, body) {
+    request(googleApiLink, function(error, response, body) {
       if (!error && response.statusCode === 200) {
         var placesObj = [];
         var googleResults = JSON.parse(body);
@@ -81,14 +80,95 @@ function getPlaces(req, res) {
             };
             placesObj.push(place);
         });
-
-        // send back data to client side
         resolve(res.send(placesObj));
       }
     });
   });
 }
 
+function fbGetVenues (req, res) {
+  var eventRadius = 1000;
+  var fbVenuesApiLink = `https://graph.facebook.com/v2.7/search?center=${req.body.latitude},${req.body.longitude}&distance=${eventRadius}&fields=id&limit=1000&type=place&access_token=${req.body.fbApiKey}`;
+  return new Promise((resolve, reject) => {
+    request(fbVenuesApiLink, function(error, response, body) {
+      if (!error && response.statusCode === 200) {
+        var fbVenuesObj = [];
+        var fbResults = JSON.parse(body);
+        fbResults.data.forEach(function(result) {
+          fbVenuesObj.push(result.id);
+        });
+        resolve(fbGetEvents(res, res, fbVenuesObj));
+      }
+    });
+  });
+}
+
+function flikrGetPlace (req, res) {
+  var flickrApiKey = 'test';
+  var flickrApiLink = `https://api.flickr.com/services/rest/?method=flickr.people.findByUsername&api_key=${flickrApiKey}&username=${req.body.place}&format=rest`;
+  return new Promise((resolve, reject) => {
+    request(flickrApiLink, function(error, response, body) {
+      if (!error && response.statusCode === 200) {
+        var userId = JSON.parse(body);
+        resolve(flickrGetPhotos(res, res, userId.user.id, flickrApiKey));
+      }
+    });
+  });
+}
+
+
+function fbGetEvents (req, res, venuesObj) {
+  var fbEventApiLink = `https://graph.facebook.com/v2.5/?ids=${venuesObj.join(',')}&fields=id,name,cover.fields(id,source),picture.type(large),location,events.fields(id,name,cover.fields(id,source),picture.type(large),description,start_time,attending_count,declined_count,maybe_count,noreply_count).since(${fbEventStart}).until(${fbEventEnd})access_token=${req.body.fbApiKey}`;
+  var fbEventStart = (new Date().getTime() / 1000).toFixed();
+  var fbEventEnd = (new Date().getTime() / 1000).toFixed();
+  return new Promise((resolve, reject) => {
+    request(fbEventApiLink, function(error, response, body) {
+      if (!error && response.statusCode === 200) {
+        var fbEvents = [];
+        var fbResults = JSON.parse(body);
+        fbResults.data.forEach(function(result) {
+            var fbLat = findXDistance(initLat, result.geometry.location.lat);
+            var distanceFromInit = hypotenuseDistance(initLat, initLon, result.geometry.location.lat, result.geometry.location.lng);
+            var fbDistance = hypotenuseDistance(req.body.latitude, req.body.longitude, result.geometry.location.lat, result.geometry.location.lng);
+            var fbLon = findYDistance(distanceFromInit, fbLat, initLon, req.body.longitude);
+            fbDistance = Math.floor(fbDistance * 3.28084);
+
+            var eventPlace = {
+            name: result.name,
+            lat: fbLat,
+            lon: fbLon,
+            distance: fbDistance,
+            img: result.icon,
+            };
+
+            fbEvents.push(eventPlace);
+        });
+        resolve(res(fbEvents));
+      }
+    });
+  });
+}
+
+
+function flickrGetPhotos(req, res, userId, apiKey) {
+  var flickrApiLink = `https://api.flickr.com/services/rest/?method=flickr.people.getPhotosOf&api_key=${apiKey}&user_id=${userId}&format=json&nojsoncallback=1`;
+  return new Promise((resolve, reject) => {
+    request(flickrApiLink, function(error, response, body) {
+      if (!error && response.statusCode === 200) {
+        var photoArr = [];
+        body.photos.photo.forEach(function(photo) {
+          var url = `https://farm${photo.farm}.staticflickr.com/${photo.server}/${photo.id}_${photo.secret}_q.jpg`;
+          photoArr.push(url);
+        });
+      }
+    resolve(res.send(photoArr));
+    });
+  });
+}
+
+
 module.exports = {
   getPlaces,
+  fbGetVenues,
+  flikrGetPlace,
 };
