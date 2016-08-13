@@ -1,6 +1,9 @@
 var request = require('request');
 var initLon = null;
 var initLat = null;
+var stubHubID = 'B9FE35EDF2A34297E0440021286899D6';
+var stubHubToken = '1b466ec5b866af29fc90e73b3a907561';
+var stubHubRefreshToken = 'a260ebe6f55a8736d842c08aa82a9e6'
 
 function deg2rad(deg) {
   return deg * (Math.PI / 180);
@@ -87,6 +90,8 @@ function getPlaces(req, res) {
 }
 
 function fbGetVenues (req, res) {
+
+  https://graph.facebook.com/v2.7/search?center=37.783537,-122.409003&distance=1000&fields=id&limit=1000&type=place
   var eventRadius = 1000;
   var fbVenuesApiLink = `https://graph.facebook.com/v2.7/search?center=${req.body.latitude},${req.body.longitude}&distance=${eventRadius}&fields=id&limit=1000&type=place&access_token=${req.body.fbApiKey}`;
   return new Promise((resolve, reject) => {
@@ -118,15 +123,20 @@ function flikrGetPlace (req, res) {
 
 
 function fbGetEvents (req, res, venuesObj) {
-  var fbEventApiLink = `https://graph.facebook.com/v2.5/?ids=${venuesObj.join(',')}&fields=id,name,cover.fields(id,source),picture.type(large),location,events.fields(id,name,cover.fields(id,source),picture.type(large),description,start_time,attending_count,declined_count,maybe_count,noreply_count).since(${fbEventStart}).until(${fbEventEnd})access_token=${req.body.fbApiKey}`;
-  var fbEventStart = (new Date().getTime() / 1000).toFixed();
-  var fbEventEnd = (new Date().getTime() / 1000).toFixed();
+  var fbEventApiLink = `https://graph.facebook.com/v2.5/?ids=${venuesObj.join(',')}&fields=id,name,cover.fields(id,source),picture.type(large),location,events.fields(id,name,cover.fields(id,source),picture.type(large),description,start_time,attending_count,declined_count,maybe_count,noreply_count).since(${fbEventStart})${fbEventEnd}access_token=${req.body.fbApiKey}`;
+  var fbEventStart = (new Date(req.body.start_time).getTime() / 1000).toFixed();
+  var fbEventEnd = '';
+  if (req.body.end_time !== undefined) {
+    fbEventEnd = `.until(${(new Date().getTime(req.body.end_time) / 1000).toFixed()}`;
+  }
   return new Promise((resolve, reject) => {
     request(fbEventApiLink, function(error, response, body) {
       if (!error && response.statusCode === 200) {
         var fbEvents = [];
         var fbResults = JSON.parse(body);
         fbResults.data.forEach(function(result) {
+          if (result.events !== undefined) {
+
             var fbLat = findXDistance(initLat, result.geometry.location.lat);
             var distanceFromInit = hypotenuseDistance(initLat, initLon, result.geometry.location.lat, result.geometry.location.lng);
             var fbDistance = hypotenuseDistance(req.body.latitude, req.body.longitude, result.geometry.location.lat, result.geometry.location.lng);
@@ -134,14 +144,18 @@ function fbGetEvents (req, res, venuesObj) {
             fbDistance = Math.floor(fbDistance * 3.28084);
 
             var eventPlace = {
-            name: result.name,
+            venueName: result.name,
+            eventName: result.events.data.name,
+            eventTime: result.events.data.start_Time,
             lat: fbLat,
             lon: fbLon,
             distance: fbDistance,
             img: result.icon,
+
             };
 
             fbEvents.push(eventPlace);
+          }
         });
         resolve(res(fbEvents));
       }
