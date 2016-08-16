@@ -61,16 +61,16 @@ function findYDistance(hypotenuse, xDistance, initLon, newLon) {
   return (newLon - initLon > 0 ) ? yDistance : -1 * yDistance;
 }
 
-function checkInit(req) {
+// function checkInit(req) {
+// }
+
+function getPlaces(req, res) {
+  // check to see if it is the initial location
   if (req.body.threejsLat === 0 && req.body.threejsLon === 0) {
     initLat = req.body.latitude;
     initLon = req.body.longitude;
   }
-}
-
-function getPlaces(req, res) {
-  // check to see if it is the initial location
-  checkInit(req);
+  // checkInit(req);
   var googleType = '';
   var googleKeyword = '';
   var googleOpenNow = '';
@@ -117,95 +117,95 @@ function getPlaces(req, res) {
     });
   });
 }
-function dateFormat(date) {
-  var day = date.getDate();
-  if ((date.getDate()) <= 9) {
-    day = `0${date.getDate()}`;
-  }
-  var month = date.getMonth() + 1;
-  if ((date.getMonth() + 1) <= 9) {
-    month = `0${date.getMonth() + 1}`;
-  }
-  return `${date.getFullYear()}${month}${day}00`;
-}
+// function dateFormat(date) {
+//   var day = date.getDate();
+//   if ((date.getDate()) <= 9) {
+//     day = `0${date.getDate()}`;
+//   }
+//   var month = date.getMonth() + 1;
+//   if ((date.getMonth() + 1) <= 9) {
+//     month = `0${date.getMonth() + 1}`;
+//   }
+//   return `${date.getFullYear()}${month}${day}00`;
+// }
 
-function getEvents(req, res) {
-  checkInit(req);
-  var date = 'Future';
-  // var startDate = new Date();
-  // var endDate = new Date();
-  // endDate.setDate(endDate.getDate() + req.body.date);
-  // var date = `${dateFormat(startDate())}-${dateFormat(endDate())}`;
-  var eventsApiKey = 'CbNBBV9Qm4wTwMpg';
-  var radius = .25;
-  var category = '';
-  if (req.body.category !== undefined) {
-    category = `&category=${req.body.category.join(',')}`;
-  }
-  var keyword = '';
-  if (req.body.keyword !== undefined) {
-    category = `&keyword=${req.body.category.join(',')}`;
-  }
-  var eventsApiLink = `http://api.eventful.com/json/events/search?...&location=${req.body.latitude},${req.body.longitude}&within=${radius}&units=miles&date=${date}${keyword}${category}&app_key=${eventsApiKey}`;
-  return new Promise((resolve, reject) => {
-    request(eventsApiLink, function(error, response, body) {
-      if (!error && response.statusCode === 200) {
-        var eventObj = [];
-        var eventsResults = JSON.parse(body);
-        eventsResults.events.event.forEach(function(event) {
-          var eventLat = findXDistance(initLat, event.latitude);
-          var distanceFromInit = hypotenuseDistance(initLat, initLon, event.latitude, event.longitude);
-          var eventDistance = hypotenuseDistance(req.body.latitude, req.body.longitude, event.latitude, event.longitude);
-          var eventLon = findYDistance(distanceFromInit, eventLat, initLon, req.body.longitude);
-          eventDistance = Math.floor(eventDistance * 3.28084);
+// function getEvents(req, res) {
+//   checkInit(req);
+//   var date = 'Future';
+//   // var startDate = new Date();
+//   // var endDate = new Date();
+//   // endDate.setDate(endDate.getDate() + req.body.date);
+//   // var date = `${dateFormat(startDate())}-${dateFormat(endDate())}`;
+//   var eventsApiKey = 'CbNBBV9Qm4wTwMpg';
+//   var radius = .25;
+//   var category = '';
+//   if (req.body.category !== undefined) {
+//     category = `&category=${req.body.category.join(',')}`;
+//   }
+//   var keyword = '';
+//   if (req.body.keyword !== undefined) {
+//     category = `&keyword=${req.body.category.join(',')}`;
+//   }
+//   var eventsApiLink = `http://api.eventful.com/json/events/search?...&location=${req.body.latitude},${req.body.longitude}&within=${radius}&units=miles&date=${date}${keyword}${category}&app_key=${eventsApiKey}`;
+//   return new Promise((resolve, reject) => {
+//     request(eventsApiLink, function(error, response, body) {
+//       if (!error && response.statusCode === 200) {
+//         var eventObj = [];
+//         var eventsResults = JSON.parse(body);
+//         eventsResults.events.event.forEach(function(event) {
+//           var eventLat = findXDistance(initLat, event.latitude);
+//           var distanceFromInit = hypotenuseDistance(initLat, initLon, event.latitude, event.longitude);
+//           var eventDistance = hypotenuseDistance(req.body.latitude, req.body.longitude, event.latitude, event.longitude);
+//           var eventLon = findYDistance(distanceFromInit, eventLat, initLon, req.body.longitude);
+//           eventDistance = Math.floor(eventDistance * 3.28084);
 
-          var place = {
-          name: event.title,
-          lat: eventLat,
-          lon: eventLon,
-          distance: eventDistance,
-          };
-          eventObj.push(place);
-        });
-        resolve(res.send(eventObj));
-      }
-    });
+//           var place = {
+//           name: event.title,
+//           lat: eventLat,
+//           lon: eventLon,
+//           distance: eventDistance,
+//           };
+//           eventObj.push(place);
+//         });
+//         resolve(res.send(eventObj));
+//       }
+//     });
 
-  });
-}
+//   });
+// }
 
-function getVenueID(req, res) {
-  var flickrApiKey = 'd06a651de2c308348be5326769d1ce47';
-  var flickrIdApiLink = `https://api.flickr.com/services/rest/?method=flickr.people.findByUsername&api_key=${flickrApiKey}&username=${req.body.username.join('+')}`;
-  return new Promise((resolve, reject) => {
-    request(flickrIdApiLink, function(error, response, body) {
-      if (!error && response.statusCode === 200) {
-        var result = JSON.parse(body);
-        getPhotos(req, res, result.user.id);
-      }
-    });
-  });
-}
+// function getVenueID(req, res) {
+//   var flickrApiKey = 'd06a651de2c308348be5326769d1ce47';
+//   var flickrIdApiLink = `https://api.flickr.com/services/rest/?method=flickr.people.findByUsername&api_key=${flickrApiKey}&username=${req.body.username.join('+')}`;
+//   return new Promise((resolve, reject) => {
+//     request(flickrIdApiLink, function(error, response, body) {
+//       if (!error && response.statusCode === 200) {
+//         var result = JSON.parse(body);
+//         getPhotos(req, res, result.user.id);
+//       }
+//     });
+//   });
+// }
 
-function getPhotos(req, res, userId) {
-  var flickrApiKey = 'd06a651de2c308348be5326769d1ce47';
-  var flickrGetPhotosLink = `https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=${flickrApiKey}&user_id=${userId}&format=json&nojsoncallback=1`;
-  return new Promise((resolve, reject) => {
-    request(flickrGetPhotosLink, function(error, response, body) {
-      if (!error && response.statusCode === 200) {
-        var results = JSON.parse(body);
-        var photoLinks = [];
-        results.photos.photo.forEach(function(photo) {
-          photoLinks.push(`https://farm${photo.farm}.staticflickr.com/${photo.server}/${photo.id}_${photo.secret}.jpg`);
-        });
-      }
-      resolve(res.send(photoLinks));
-    });
-  });
-}
+// function getPhotos(req, res, userId) {
+//   var flickrApiKey = 'd06a651de2c308348be5326769d1ce47';
+//   var flickrGetPhotosLink = `https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=${flickrApiKey}&user_id=${userId}&format=json&nojsoncallback=1`;
+//   return new Promise((resolve, reject) => {
+//     request(flickrGetPhotosLink, function(error, response, body) {
+//       if (!error && response.statusCode === 200) {
+//         var results = JSON.parse(body);
+//         var photoLinks = [];
+//         results.photos.photo.forEach(function(photo) {
+//           photoLinks.push(`https://farm${photo.farm}.staticflickr.com/${photo.server}/${photo.id}_${photo.secret}.jpg`);
+//         });
+//       }
+//       resolve(res.send(photoLinks));
+//     });
+//   });
+// }
 
 module.exports = {
   getPlaces,
-  getEvents,
-  getVenueID,
+  // getEvents,
+  // getVenueID,
 };
