@@ -2,31 +2,7 @@ var request = require('request');
 var initLon = null;
 var initLat = null;
 
-// var eventsCategory = {
-//   business: 'conference,business',
-//   family: 'family_fun_kids',
-//   comedy: 'comedy',
-//   festivals: 'festivals_parades,food,outdoors_recreation',
-//   sports: 'sports',
-//   music: 'music',
-//   social: 'attractions,community,singles_social',
-//   film: 'movies_film',
-//   art: 'art,performing_arts',
-//   sci_tec: 'science+technology',
-// };
 
-// var placesKeyword = {
-//   hotels: 'lodging',
-//   cafe: 'bakery+cafe',
-//   parks: 'park',
-//   bars: 'bar+night_club',
-//   shopping: 'clothing_store+department_store+electronics_store+shopping_mall',
-//   food: 'restaurant',
-//   public_transit: 'bus_station+subway_station+train_station',
-//   banks_atm: 'atm+bank',
-//   parking: 'parking',
-//   gas_stations: 'gas_station',
-// };
 
 function deg2rad(deg) {
   return deg * (Math.PI / 180);
@@ -68,25 +44,54 @@ function checkInit(req) {
   }
 }
 
+var placesKeyword = {
+  food: 'restaurant',
+  hotel: 'lodging',
+  cafes: 'bakery+cafe',
+  nightlife: 'bar+night_club',
+  shopping: 'clothing_store+department_store+electronics_store+shopping_mall',
+  publicTransit: 'bus_station+subway_station+train_station',
+  bank: 'atm+bank',
+  gasStation: 'gas_station',
+  parking: 'parking',
+  parks: 'park',
+};
+
+function placesFilter(obj) {
+  var filtered = false;
+  var results = [];
+  for (var key in obj) {
+    if (obj[key] === true) {
+      filtered = true;
+      results.push(placesKeyword[key]);
+    }
+  }
+  if (filtered) {
+    return `&type=${results.join('+')}`;
+  } else {
+    return '';
+  }
+}
+
+function placesSearch(string) {
+  if (string === '' || string === undefined) {
+    return '';
+  } else {
+    var stringArray = string.split(' ');
+    return `&keyword=${stringArray.join('+')}`;
+  }
+}
+
 function getPlaces(req, res) {
-  // check to see if it is the initial location
-  checkInit(req);
-  var googleType = '';
-  var googleKeyword = '';
+  console.log('test')
   var googleOpenNow = '';
-  if (req.body.type !== undefined) {
-    googleType = `&type=${req.body.type.join('+')}`;
-  }
-  if (req.body.keyword !== undefined) {
-    googleKeyword = `&keyword=${req.body.keyword.join('+')}`;
-  }
   if (req.body.openNow !== undefined) {
     googleOpenNow = '&opennow';
   }
   // call to google API to get locations around
   var radius = 1000;
   var apiKey = 'AIzaSyDXk9vLjijFncKwQ-EeTW0tyiKpn7RRABU';
-  var link = `https://maps.googleapis.com/maps/api/place/search/json?location=${req.body.latitude},${req.body.longitude}&radius=${radius}${googleKeyword}${googleOpenNow}${googleType}&key=${apiKey}`;
+  var link = `https://maps.googleapis.com/maps/api/place/search/json?location=${req.body.latitude},${req.body.longitude}&radius=${radius}${placesFilter(req.body)}${googleOpenNow}${placesSearch(req.body.placeSearch)}&key=${apiKey}`;
   return new Promise((resolve, reject) => {
     request(link, function(error, response, body) {
       if (!error && response.statusCode === 200) {
@@ -129,24 +134,56 @@ function dateFormat(date) {
   return `${date.getFullYear()}${month}${day}00`;
 }
 
+var eventsCategory = {
+  business: 'conference,business',
+  family: 'family_fun_kids',
+  comedy: 'comedy',
+  festivals: 'festivals_parades,food,outdoors_recreation',
+  sports: 'sports',
+  music: 'music',
+  social: 'attractions,community,singles_social',
+  film: 'movies_film',
+  art: 'art,performing_arts',
+  sci_tec: 'science+technology',
+};
+
+function eventsFilter(obj) {
+  var filtered = false;
+  var results = [];
+  for (var key in obj) {
+    if (obj[key] === true) {
+      filtered = true;
+      results.push(placesKeyword[key]);
+    }
+  }
+  if (filtered) {
+    return `&category=${results.join('+')}`;
+  } else {
+    return '';
+  }
+}
+
+function eventsSearch(string) {
+  if (string === '' || string === undefined) {
+    return '';
+  } else {
+    var stringArray = string.split(' ');
+    return `&keyword=${stringArray.join('+')}`;
+  }
+}
+
 function getEvents(req, res) {
+  console.log('Events Post Request: ');
+  console.log(req.body);
   checkInit(req);
-  var date = 'Future';
-  // var startDate = new Date();
-  // var endDate = new Date();
-  // endDate.setDate(endDate.getDate() + req.body.date);
-  // var date = `${dateFormat(startDate())}-${dateFormat(endDate())}`;
+  var startDate = new Date();
+  var endDate = new Date();
+  endDate.setDate(endDate.getDate() + req.body.eventDays - 1);
+  var date = `${dateFormat(startDate)}-${dateFormat(endDate)}`;
   var eventsApiKey = 'CbNBBV9Qm4wTwMpg';
   var radius = .25;
-  var category = '';
-  if (req.body.category !== undefined) {
-    category = `&category=${req.body.category.join(',')}`;
-  }
-  var keyword = '';
-  if (req.body.keyword !== undefined) {
-    category = `&keyword=${req.body.category.join(',')}`;
-  }
-  var eventsApiLink = `http://api.eventful.com/json/events/search?...&location=${req.body.latitude},${req.body.longitude}&within=${radius}&units=miles&date=${date}${keyword}${category}&app_key=${eventsApiKey}`;
+  var eventsApiLink = `http://api.eventful.com/json/events/search?...&location=${req.body.latitude},${req.body.longitude}&within=${radius}&units=miles&date=${date}${eventsFilter(req.body)}${eventsSearch(req.body.eventSearch)}&app_key=${eventsApiKey}`;
+  console.log(eventsApiLink);
   return new Promise((resolve, reject) => {
     request(eventsApiLink, function(error, response, body) {
       if (!error && response.statusCode === 200) {
@@ -167,6 +204,7 @@ function getEvents(req, res) {
           };
           eventObj.push(place);
         });
+        console.log(eventObj)
         resolve(res.send(eventObj));
       }
     });
