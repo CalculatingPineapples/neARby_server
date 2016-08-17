@@ -83,7 +83,6 @@ function placesSearch(string) {
 }
 
 function getPlaces(req, res) {
-  console.log('test')
   var googleOpenNow = '';
   if (req.body.openNow !== undefined) {
     googleOpenNow = '&opennow';
@@ -153,7 +152,7 @@ function eventsFilter(obj) {
   for (var key in obj) {
     if (obj[key] === true) {
       filtered = true;
-      results.push(placesKeyword[key]);
+      results.push(eventsCategory[key]);
     }
   }
   if (filtered) {
