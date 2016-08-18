@@ -2,6 +2,8 @@ var request = require('request');
 var initLon = null;
 var initLat = null;
 
+
+
 function deg2rad(deg) {
   return deg * (Math.PI / 180);
 }
