@@ -2,8 +2,6 @@ var request = require('request');
 var initLon = null;
 var initLat = null;
 
-
-
 function deg2rad(deg) {
   return deg * (Math.PI / 180);
 }
@@ -83,7 +81,7 @@ function placesSearch(string) {
 }
 
 function getPlaces(req, res) {
-  console.log('test')
+  checkInit(req);
   var googleOpenNow = '';
   if (req.body.openNow !== undefined) {
     googleOpenNow = '&opennow';
