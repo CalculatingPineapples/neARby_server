@@ -83,7 +83,7 @@ function placesSearch(string) {
 }
 
 function getPlaces(req, res) {
-  console.log('test')
+  checkInit(req)
   var googleOpenNow = '';
   if (req.body.openNow !== undefined) {
     googleOpenNow = '&opennow';
@@ -173,8 +173,8 @@ function eventsSearch(string) {
 }
 
 function getEvents(req, res) {
-  console.log('Events Post Request: ');
-  console.log(req.body);
+  // console.log('Events Post Request: ');
+  // console.log(req.body);
   checkInit(req);
   var startDate = new Date();
   var endDate = new Date();
