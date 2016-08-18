@@ -36,8 +36,7 @@ function findYDistance(hypotenuse, xDistance, initLon, newLon) {
 }
 
 
-function getEvents(req, res) {
-  console.log('getPlaces');
+function getPlaces(req, res) {
   // check to see if it is the initial location
   if (req.body.threejsLat === 0 && req.body.threejsLon === 0) {
     // if so recored the initial position
@@ -91,7 +90,7 @@ function getEvents(req, res) {
   });
 }
 
-function getPlaces(req, res) {
+function getEvents(req, res) {
   if (req.body.threejsLat === 0 && req.body.threejsLon === 0) {
     // if so recored the initial position
     initLat = req.body.latitude;
