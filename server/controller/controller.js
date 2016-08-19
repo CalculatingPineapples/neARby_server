@@ -2,8 +2,6 @@ var request = require('request');
 var initLon = null;
 var initLat = null;
 
-
-
 function deg2rad(deg) {
   return deg * (Math.PI / 180);
 }
@@ -90,7 +88,7 @@ function getPlaces(req, res) {
   }
   // call to google API to get locations around
   var radius = 1000;
-  var apiKey = 'AIzaSyDXk9vLjijFncKwQ-EeTW0tyiKpn7RRABU';
+  var apiKey = 'AIzaSyD7aR69bFQ1ao2A3PKTBRGUEp4cSWaxnmw';
   var link = `https://maps.googleapis.com/maps/api/place/search/json?location=${req.body.latitude},${req.body.longitude}&radius=${radius}${placesFilter(req.body)}${googleOpenNow}${placesSearch(req.body.placeSearch)}&key=${apiKey}`;
   return new Promise((resolve, reject) => {
     request(link, function(error, response, body) {
@@ -107,11 +105,12 @@ function getPlaces(req, res) {
             googleDistance = Math.floor(googleDistance * 3.28084);
             // populate an object with all necessary information
             var place = {
-            name: result.name,
+            name: result.name.replace(/'/g, ''),
             lat: googleLat,
             lon: googleLon,
             distance: googleDistance,
             img: result.icon,
+            address: result.vicinity.replace(/'/g, ''),
             };
             placesObj.push(place);
         });
@@ -197,14 +196,21 @@ function getEvents(req, res) {
           eventDistance = Math.floor(eventDistance * 3.28084);
 
           var place = {
-          name: event.title,
+          name: event.title.replace(/'/g, ''),
+          venue: event.venue_name.replace(/'/g, ''),
+          address: event.venue_address.replace(/'/g, ''),
+          startTime: event.start_time,
+          endTime: event.stop_time,
           lat: eventLat,
           lon: eventLon,
           distance: eventDistance,
+          url: event.url,
+          description: event.description.replace(/'/g, ''),
+          image: event.image,
           };
           eventObj.push(place);
         });
-        console.log(eventObj)
+        console.log(eventObj);
         resolve(res.send(eventObj));
       }
     });
@@ -213,23 +219,12 @@ function getEvents(req, res) {
 }
 
 function getVenueID(req, res) {
-  var flickrApiKey = 'd06a651de2c308348be5326769d1ce47';
-  var flickrIdApiLink = `https://api.flickr.com/services/rest/?method=flickr.people.findByUsername&api_key=${flickrApiKey}&username=${req.body.username.join('+')}`;
+  console.log('inside get venue', req.body)
+  var flickrApiKey = '0067ef61b0e0fe17b2d46892a314223b';
+  var flickrIdApiLink = `https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=${flickrApiKey}&text=${req.body.name.split(' ').join('+')}&format=json&nojsoncallback=1`;
+  console.log(flickrIdApiLink)
   return new Promise((resolve, reject) => {
     request(flickrIdApiLink, function(error, response, body) {
-      if (!error && response.statusCode === 200) {
-        var result = JSON.parse(body);
-        getPhotos(req, res, result.user.id);
-      }
-    });
-  });
-}
-
-function getPhotos(req, res, userId) {
-  var flickrApiKey = 'd06a651de2c308348be5326769d1ce47';
-  var flickrGetPhotosLink = `https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=${flickrApiKey}&user_id=${userId}&format=json&nojsoncallback=1`;
-  return new Promise((resolve, reject) => {
-    request(flickrGetPhotosLink, function(error, response, body) {
       if (!error && response.statusCode === 200) {
         var results = JSON.parse(body);
         var photoLinks = [];
@@ -237,7 +232,19 @@ function getPhotos(req, res, userId) {
           photoLinks.push(`https://farm${photo.farm}.staticflickr.com/${photo.server}/${photo.id}_${photo.secret}.jpg`);
         });
       }
+      console.log(photoLinks)
       resolve(res.send(photoLinks));
+    });
+  });
+}
+
+function getPhotos(req, res, userId) {
+  console.log('got in here~')
+  var flickrApiKey = 'd06a651de2c308348be5326769d1ce47';
+  var flickrGetPhotosLink = `https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=${flickrApiKey}&user_id=${userId}&format=json&nojsoncallback=1`;
+  console.log(flickrGetPhotosLink)
+  return new Promise((resolve, reject) => {
+    request(flickrGetPhotosLink, function(error, response, body) {
     });
   });
 }
