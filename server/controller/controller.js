@@ -104,17 +104,29 @@ function getPlaces(req, res) {
             var googleLon = findYDistance(distanceFromInit, googleLat, initLon, req.body.longitude);
             googleDistance = Math.floor(googleDistance * 3.28084);
             // populate an object with all necessary information
+            var name = result.name;
+            if (name !== null) {
+              name = result.name.replace(/'/g, '');
+            }
+
+            var address = result.vicinity;
+            if (address !== null) {
+              address = result.vicinity.replace(/'/g, '');
+            }
+
             var place = {
-            name: result.name.replace(/'/g, ''),
+            name: name,
+            googleId: result.place_id,
             lat: googleLat,
             lon: googleLon,
+            realLat: result.geometry.location.lat,
+            realLon: result.geometry.location.lng,
             distance: googleDistance,
             img: result.icon,
-            address: result.vicinity.replace(/'/g, ''),
+            address: address,
             };
             placesObj.push(place);
         });
-
         // send back data to client side
         resolve(res.send(placesObj));
       }
@@ -132,19 +144,6 @@ function dateFormat(date) {
   }
   return `${date.getFullYear()}${month}${day}00`;
 }
-
-var eventsCategory = {
-  business: 'conference,business',
-  family: 'family_fun_kids',
-  comedy: 'comedy',
-  festivals: 'festivals_parades,food,outdoors_recreation',
-  sports: 'sports',
-  music: 'music',
-  social: 'attractions,community,singles_social',
-  film: 'movies_film',
-  art: 'art,performing_arts',
-  sci_tec: 'science+technology',
-};
 
 function eventsFilter(obj) {
   var filtered = false;
@@ -172,79 +171,108 @@ function eventsSearch(string) {
 }
 
 function getEvents(req, res) {
-  // console.log('Events Post Request: ');
-  // console.log(req.body);
   checkInit(req);
   var startDate = new Date();
   var endDate = new Date();
   endDate.setDate(endDate.getDate() + req.body.eventDays - 1);
   var date = `${dateFormat(startDate)}-${dateFormat(endDate)}`;
   var eventsApiKey = 'CbNBBV9Qm4wTwMpg';
-  var radius = .25;
+  var radius = 0.25;
   var eventsApiLink = `http://api.eventful.com/json/events/search?...&location=${req.body.latitude},${req.body.longitude}&within=${radius}&units=miles&date=${date}${eventsFilter(req.body)}${eventsSearch(req.body.eventSearch)}&app_key=${eventsApiKey}`;
-  console.log(eventsApiLink);
   return new Promise((resolve, reject) => {
     request(eventsApiLink, function(error, response, body) {
-      if (!error && response.statusCode === 200) {
-        var eventObj = [];
-        var eventsResults = JSON.parse(body);
-        eventsResults.events.event.forEach(function(event) {
-          var eventLat = findXDistance(initLat, event.latitude);
-          var distanceFromInit = hypotenuseDistance(initLat, initLon, event.latitude, event.longitude);
-          var eventDistance = hypotenuseDistance(req.body.latitude, req.body.longitude, event.latitude, event.longitude);
-          var eventLon = findYDistance(distanceFromInit, eventLat, initLon, req.body.longitude);
-          eventDistance = Math.floor(eventDistance * 3.28084);
+      if (error) {
+        reject(error);
+      } else {
+        if (!error && response.statusCode === 200) {
+          var eventObj = [];
+          var eventsResults = JSON.parse(body);
+          eventsResults.events.event.forEach(function(event) {
+            var eventLat = findXDistance(initLat, event.latitude);
+            var distanceFromInit = hypotenuseDistance(initLat, initLon, event.latitude, event.longitude);
+            var eventDistance = hypotenuseDistance(req.body.latitude, req.body.longitude, event.latitude, event.longitude);
+            var eventLon = findYDistance(distanceFromInit, eventLat, initLon, req.body.longitude);
+            eventDistance = Math.floor(eventDistance * 3.28084);
 
-          var place = {
-          name: event.title.replace(/'/g, ''),
-          venue: event.venue_name.replace(/'/g, ''),
-          address: event.venue_address.replace(/'/g, ''),
-          startTime: event.start_time,
-          endTime: event.stop_time,
-          lat: eventLat,
-          lon: eventLon,
-          distance: eventDistance,
-          url: event.url,
-          description: event.description.replace(/'/g, ''),
-          image: event.image,
-          };
-          eventObj.push(place);
-        });
-        console.log(eventObj);
-        resolve(res.send(eventObj));
+            var name = event.title;
+            if (name !== null) {
+              name = event.title.replace(/'/g, '');
+            }
+
+            var venue = event.venue_name;
+            if (venue !== null) {
+              venue = event.venue_name.replace(/'/g, '');
+            }
+
+            var address = event.venue_address;
+            if (address !== null) {
+              address = event.venue_address.replace(/'/g, '');
+            }
+
+            var description = event.description;
+            if (description !== null) {
+              description = event.description.replace(/'/g, '');
+            }
+
+            var place = {
+            name: name,
+            venue: venue,
+            address: address,
+            startTime: event.start_time,
+            endTime: event.stop_time,
+            lat: eventLat,
+            lon: eventLon,
+            distance: eventDistance,
+            url: event.url,
+            description: description,
+            image: event.image,
+            };
+            eventObj.push(place);
+          });
+          resolve(res.send(eventObj));
+        }
       }
     });
 
   });
 }
 
-function getVenueID(req, res) {
-  console.log('inside get venue', req.body)
+function getPhotos(req, res) {
   var flickrApiKey = '0067ef61b0e0fe17b2d46892a314223b';
-  var flickrIdApiLink = `https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=${flickrApiKey}&text=${req.body.name.split(' ').join('+')}&format=json&nojsoncallback=1`;
-  console.log(flickrIdApiLink)
-  return new Promise((resolve, reject) => {
-    request(flickrIdApiLink, function(error, response, body) {
-      if (!error && response.statusCode === 200) {
-        var results = JSON.parse(body);
-        var photoLinks = [];
-        results.photos.photo.forEach(function(photo) {
-          photoLinks.push(`https://farm${photo.farm}.staticflickr.com/${photo.server}/${photo.id}_${photo.secret}.jpg`);
-        });
-      }
-      console.log(photoLinks)
-      resolve(res.send(photoLinks));
-    });
-  });
-}
-
-function getPhotos(req, res, userId) {
-  console.log('got in here~')
-  var flickrApiKey = 'd06a651de2c308348be5326769d1ce47';
-  var flickrGetPhotosLink = `https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=${flickrApiKey}&user_id=${userId}&format=json&nojsoncallback=1`;
-  console.log(flickrGetPhotosLink)
+  var flickrGetPhotosLink = `https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=${flickrApiKey}&user_id=hackreactor&format=json&nojsoncallback=1`;
   return new Promise((resolve, reject) => {
     request(flickrGetPhotosLink, function(error, response, body) {
+      if (error) {
+        reject(error);
+      } else {
+        var results = [];
+        var images = JSON.parse(body);
+        images.photos.photo.forEach(function(item) {
+          var url = `https://farm${item.farm}.staticflickr.com/${item.server}/${item.id}_${item.secret}.jpg`;
+          results.push(url);
+        });
+      }
+    resolve(res.send(results));
+    });
+  });
+}
+
+function getDirections(req, res) {
+  var ApiDirectionKey = 'AIzaSyD2yLYA4u-MuYGMJrBgrerIF898U2s6MlA';
+  var getDirectionsLink = `https://maps.googleapis.com/maps/api/directions/json?origin=${req.body.curLat},${req.body.curLon}&destination=${req.body.destLat},${req.body.destLon}&mode=walking&key=${ApiDirectionKey}`;
+  return new Promise((resolve, reject) =>  {
+    request(getDirectionsLink, function(error, response, body) {
+      if (error) {
+        reject(error);
+      } else {
+        var results = [];
+        var directions = JSON.parse(body);
+        directions.routes[0].legs[0].steps.forEach(function(item) {
+          var newItems = item.html_instructions.replace('<div style="font-size:0.9em">', '.  ');
+          results.push(newItems.replace(/<(?:.|\n)*?>/gm, ''));
+        });
+      }
+      resolve(res.send(results));
     });
   });
 }
@@ -252,5 +280,6 @@ function getPhotos(req, res, userId) {
 module.exports = {
   getPlaces,
   getEvents,
-  getVenueID,
+  getPhotos,
+  getDirections,
 };

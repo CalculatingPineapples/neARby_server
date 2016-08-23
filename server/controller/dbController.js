@@ -1,17 +1,29 @@
-var db = require('./router');
+var db = require('redis').createClient();
+var counter = 1;
 
 function createPlace(req, res) {
-  db.exists(req.body.event, function(err, reply) {
-    if (reply === 1) {
+  // check to see if the place is in DB
+  db.exists(req.body.name, function(err, reply) {
+    if (err) { res.send('error accessing the database');
+  } else if (reply === 1) {
+      // if it is, do not add it to the db
       res('this event already exists');
     } else {
-      db.set(req.body.event);
-      db.expire(req.body.event);
+      // otherwise add to database, set to expire and then add to users profile
+      db.set(req.body.name);
+      db.expire(req.body.name, 2700);
       db.hmset('places', {
+        'id': counter,
         'name': req.body.name,
+        'description': req.body.description,
+        'latitude': req.body.latitude,
+        'longitude': req.body.longitude,
         'lat': req.body.lat,
-        'lon': req.body.lon
+        'lon': req.body.lon,
+        'type': req.body.type,
+        'user': req.body.user
       });
+      db.lpush(req.body.user, counter);
       res('event was created');
     }
   });
@@ -20,39 +32,55 @@ function createPlace(req, res) {
 function getPlace(req, res) {
   var results = [];
   db.hgetall('places', function(err, object) {
-    for (var key in object) {
-      if (Math.abs(key.lat - req.body.lat) < .005 && Math.abs(key.lon - req.body.lat) < .005) {
-        results.push(key);
+    if (err) { res.send('error checking the database');
+    } else {
+      for (var key in object) {
+        if (Math.abs(key.lat - req.body.lat) < .005 && Math.abs(key.lon - req.body.lat) < .005) {
+          results.push(key);
+        }
       }
     }
-  });
+});
   res(results);
 }
 
 function createEvent(req, res) {
-  db.exists(req.body.event, function(err, reply) {
-    if (reply === 1) {
+  db.exists(req.body.name, function(err, reply) {
+    if (err) { res.send('error accessing the database');
+  } else if (reply === 1) {
+      // if it is, do not add it to the db
       res('this event already exists');
     } else {
-      db.set(req.body.event);
-      db.expire(req.body.event);
+      // otherwise add to database, set to expire and then add to users profile
+      db.set(req.body.name);
+      db.expire(req.body.name, 7200);
       db.hmset('events', {
+        'id': counter,
         'name': req.body.name,
+        'description': req.body.description,
+        'latitude': req.body.latitude,
+        'longitude': req.body.longitude,
         'lat': req.body.lat,
-        'lon': req.body.lon
+        'lon': req.body.lon,
+        'type': req.body.type,
+        'user': req.body.user,
+        'time': req.body.time
       });
+      db.lpush(req.body.user, counter);
       res('event was created');
     }
   });
 }
 
-
 function getEvent(req, res){
   var results = [];
   db.hgetall('places', function(err, object) {
-    for (var key in object) {
-      if (Math.abs(key.lat - req.body.lat) < .005 && Math.abs(key.lon - req.body.lat) < .005) {
-        results.push(key);
+    if (err) { res.send('error accessing the database');
+    } else {
+      for (var key in object) {
+        if (Math.abs(key.lat - req.body.lat) < 0.005 && Math.abs(key.lon - req.body.lat) < 0.005) {
+          results.push(key);
+        }
       }
     }
   });
