@@ -83,7 +83,7 @@ function placesSearch(string) {
 function getPlaces(req, res) {
   checkInit(req);
   var googleOpenNow = '';
-  if (req.body.openNow !== undefined) {
+  if (req.body.openNow !== undefined) { 
     googleOpenNow = '&opennow';
   }
   // call to google API to get locations around
