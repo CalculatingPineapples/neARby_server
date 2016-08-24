@@ -1,6 +1,7 @@
 var express = require('express');
 var bodyParser = require('body-parser');
 var router = require('./router');
+// var redis;
 
 var app = express();
 var port = 3000;
@@ -14,4 +15,11 @@ app.use('/', router);
 app.listen(process.env.PORT || port);
 console.log(`Listening on port ${port}`);
 
-// test this out
+// if (process.env.REDISTOGO_URL){
+//   var rtg = require('url').parse(process.env.REDISTOGO_URL);
+//   redis = require('redis').createClient(rtg.port, rtg.hostname);
+// } else {
+//   redis = require('redis').createClient();
+// }
+
+// module.exports = redis;

@@ -187,6 +187,7 @@ function getEvents(req, res) {
         if (!error && response.statusCode === 200) {
           var eventObj = [];
           var eventsResults = JSON.parse(body);
+
           eventsResults.events.event.forEach(function(event) {
             var eventLat = findXDistance(initLat, event.latitude);
             var distanceFromInit = hypotenuseDistance(initLat, initLon, event.latitude, event.longitude);
@@ -224,11 +225,11 @@ function getEvents(req, res) {
             lon: eventLon,
             distance: eventDistance,
             url: event.url,
-            description: description,
             image: event.image,
             };
             eventObj.push(place);
           });
+          console.log(eventObj)
           resolve(res.send(eventObj));
         }
       }
