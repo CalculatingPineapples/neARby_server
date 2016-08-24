@@ -11,10 +11,10 @@ var counter = 1;
 function createPlace(req, res) {
   // check to see if the place is in redis
   redis.exists(req.body.name, function(err, reply) {
-    if (err) { res.send('error accessing the database');
+    if (err) { console.log('error accessing the database');
     } else if (reply === 1) {
       // if it is, do not add it to the redis
-      res.send('this event already exists');
+      console.log('this event already exists');
     } else {
       // otherwise add to database, set to expire and then add to users profile
       redis.set(counter, req.body.name);
@@ -59,7 +59,6 @@ function voteEvents(req, res) {
 }
 
 function getPlace(req, res) {
-  console.log('test got in places!!');
   var results = [];
   // check through all of the database
     for (var i = 1; i <= counter; i++) {
@@ -71,20 +70,21 @@ function getPlace(req, res) {
         } else if (Math.abs(object.latitude - req.body.latitude) < 1 && Math.abs(object.longitude - req.body.longitude) < 1) {
           results.push(object);
         }
-        redis.hgetall(`place${counter}`, function(err, object) {
-          console.log('data sent', results)
-          res.send(results);
-        });
+      });
+    if (i === counter) {
+      redis.hgetall(`place${counter}`, function() {
+        res.send(results);
       });
     }
+  }
 }
 
 function createEvent(req, res) {
   redis.exists(req.body.name, function(err, reply) {
-    if (err) { res.send('error accessing the database');
+    if (err) { console.log('error accessing the database');
   } else if (reply === 1) {
       // if it is, do not add it to the redis
-      res.send('this event already exists');
+      console.log('this event already exists');
     } else {
       // otherwise add to database, set to expire and then add to users profile
       redis.set(req.body.name);
@@ -112,17 +112,22 @@ function createEvent(req, res) {
 
 function getEvent(req, res){
   var results = [];
-  redis.hgetall('places', function(err, object) {
-    if (err) { res.send('error accessing the database');
-    } else {
-      for (var key in object) {
-        if (Math.abs(key.lat - req.body.lat) < 0.005 && Math.abs(key.lon - req.body.lat) < 0.005) {
-          results.push(key);
-        }
+  for (var i = 1; i <= counter; i++) {
+    redis.hgetall(`event${i}`, function(err, object) {
+      if (err) {
+        console.log('there was an error in the database');
+      } else if (object === null) {
+        console.log('nothing in the database!');
+      } else if (Math.abs(object.latitude - req.body.latitude) < 1 && Math.abs(object.longitude - req.body.longitude) < 1) {
+        results.push(object);
       }
+    });
+    if (i === counter) {
+      redis.hgetall(`event${counter}`, function() {
+        res.send(results);
+      });
     }
-  });
-  res(results);
+  }
 }
 
 module.exports = {
