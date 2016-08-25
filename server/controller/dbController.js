@@ -81,8 +81,8 @@ function getPlace(req, res) {
 
 function createEvent(req, res) {
   redis.exists(req.body.name, function(err, reply) {
-    if (err) { console.log('error accessing the database');
-  } else if (reply === 1) {
+    if (err) { throw err;
+    } else if (reply === 1) {
       // if it is, do not add it to the redis
       console.log('this event already exists');
     } else {
@@ -114,8 +114,7 @@ function getEvent(req, res){
   var results = [];
   for (var i = 1; i <= counter; i++) {
     redis.hgetall(`event${i}`, function(err, object) {
-      if (err) {
-        console.log('there was an error in the database');
+      if (err) { throw err
       } else if (object === null) {
         console.log('nothing in the database!');
       } else if (Math.abs(object.latitude - req.body.latitude) < 1 && Math.abs(object.longitude - req.body.longitude) < 1) {
