@@ -34,6 +34,7 @@ function createPlace(req, res) {
       });
       counter++;
       redis.lpush(req.body.username, counter);
+      console.log(req.body)
       res.send(req.body);
     }
   });
@@ -60,6 +61,7 @@ function voteEvents(req, res) {
 
 function getPlace(req, res) {
   var results = [];
+  console.log('first time i went thoguth here', results)
   // check through all of the database
     for (var i = 1; i <= counter; i++) {
       redis.hgetall(`place${i}`, function(err, object) {
@@ -73,6 +75,7 @@ function getPlace(req, res) {
       });
     if (i === counter) {
       redis.hgetall(`place${counter}`, function() {
+        console.log('second time i went thoguth here', results)
         res.send(results);
       });
     }
