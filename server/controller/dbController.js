@@ -1,10 +1,5 @@
-var redis;
-if (process.env.REDISTOGO_URL){
-  var rtg = require('url').parse(process.env.REDISTOGO_URL);
-  redis = require('redis').createClient(rtg.port, rtg.hostname);
-} else {
-  redis = require('redis').createClient();
-}
+var db = require('redis');
+var redis = db.createClient(process.env.REDISCLOUD_URL, {no_ready_check: true});
 
 var counter = 1;
 
