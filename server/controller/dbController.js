@@ -1,5 +1,7 @@
 var db = require('redis');
-var redis = db.createClient(process.env.REDISCLOUD_URL, {no_ready_check: true});
+var url = require('url');
+var redisURL = url.parse(process.env.REDISCLOUD_URL);
+var redis = db.createClient(redisURL.port, redisURL.hostname, {no_ready_check: true});
 
 var counter = 1;
 
