@@ -1,9 +1,10 @@
-var redis;
-if (process.env.REDISTOGO_URL){
-  var rtg = require('url').parse(process.env.REDISTOGO_URL);
-  redis = require('redis').createClient(rtg.port, rtg.hostname);
+if (process.env.REDISTOGO_URL) {
+  var rtg   = require('url').parse(process.env.REDISTOGO_URL);
+  var redis = require('redis').createClient(rtg.port, rtg.hostname);
+
+redis.auth(rtg.auth.split(':')[1]);
 } else {
-  redis = require('redis').createClient();
+    var redis = require('redis').createClient();
 }
 
 var counter = 1;
@@ -87,6 +88,7 @@ function getPlace(req, res) {
   // check through all of the database
     for (var i = 1; i <= counter; i++) {
       redis.hgetall(`place${i}`, function(err, object) {
+        console.log('ok this is really weird', object)
         if (err) {
           console.log('there was an error in the database');
         } else if (object === null) {

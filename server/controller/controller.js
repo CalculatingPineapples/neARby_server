@@ -1,8 +1,8 @@
 var request = require('request');
 var initLon = null;
 var initLat = null;
-var redis = require('./dbController');
-var counter = require('./dbController')
+
+var dbController = require('./dbController')
 
 function deg2rad(deg) {
   return deg * (Math.PI / 180);
@@ -82,22 +82,20 @@ function placesSearch(string) {
 function getPlaces(req, res) {
   checkInit(req);
   var placesObj = [];
-  for (var i = 1; i <= counter; i++) {
-    redis.hgetall(`place${i}`, function(err, object) {
-      if (err) {
-        console.log('there was an error in the database');
-      } else if (object === null) {
-        console.log('nothing in the database!');
-      } else if (Math.abs(object.latitude - req.body.latitude) < 1 && Math.abs(object.longitude - req.body.longitude) < 1) {
-         if (object.img === '') {
-            object.img = []
-          } else { 
+    for (var i = 1; i <= dbController.counter; i++) {
+      dbController.redis.hgetall(`place${i}`, function(err, object) {
+        console.log('ok this is really weird, part deaux:', object)
+        if (err) {
+          console.log('there was an error in the database');
+        } else if (object === null) {
+          console.log('nothing in the database!');
+        } else if (Math.abs(object.latitude - req.body.latitude) < 1 && Math.abs(object.longitude - req.body.longitude) < 1) {
+          if (object.img !== '') {
             object.img = object.img.split(',');
           }
-          console.log('test this out', object.img)
-        placesObj.push(object);
-      }
-    });
+          placesObj.push(object);
+        }
+      });
   }
   var googleOpenNow = '';
   if (req.body.openNow !== undefined) {
@@ -107,6 +105,7 @@ function getPlaces(req, res) {
   var apiKey = 'AIzaSyD7aR69bFQ1ao2A3PKTBRGUEp4cSWaxnmw';
   var link = `https://maps.googleapis.com/maps/api/place/search/json?location=${req.body.latitude},${req.body.longitude}&radius=${radius}${placesFilter(req.body)}${googleOpenNow}${placesSearch(req.body.placeSearch)}&key=${apiKey}`;
   return new Promise((resolve, reject) => {
+    console.log('now try this out')
     request(link, function(error, response, body) {
       if (!error && response.statusCode === 200) {
         var googleResults = JSON.parse(body);
@@ -140,6 +139,7 @@ function getPlaces(req, res) {
             };
             placesObj.push(place);
         });
+        console.log('test test test', placesObj)
         resolve(res.send(placesObj));
       }
     });
@@ -194,22 +194,22 @@ function eventsFilter(obj, string) {
 
 function getEvents(req, res) {
   var eventObj = [];
-  for (var i = 1; i <= counter; i++) {
-    redis.hgetall(`event${i}`, function(err, object) {
-      if (err) { throw err;
+  checkInit(req);
+  for (var i = 1; i <= dbController.counter; i++) {
+    dbController.redis.hgetall(`place${i}`, function(err, object) {
+      console.log('ok this is really weird, part deaux:', object)
+      if (err) {
+        console.log('there was an error in the database');
       } else if (object === null) {
         console.log('nothing in the database!');
       } else if (Math.abs(object.latitude - req.body.latitude) < 1 && Math.abs(object.longitude - req.body.longitude) < 1) {
-         if (object.img === '') {
-            object.img = []
-          } else { 
-            object.img = object.img.split(',');
-          }
+        if (object.img !== '') {
+          object.img = object.img.split(',');
+        }
         eventObj.push(object);
       }
     });
   }
-  checkInit(req);
   var startDate = new Date();
   var endDate = new Date();
   endDate.setDate(endDate.getDate() + req.body.eventDays - 1);
