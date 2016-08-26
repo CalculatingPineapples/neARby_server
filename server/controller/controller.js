@@ -81,6 +81,24 @@ function placesSearch(string) {
 
 function getPlaces(req, res) {
   checkInit(req);
+  var placesObj = [];
+  for (var i = 1; i <= counter; i++) {
+    redis.hgetall(`place${i}`, function(err, object) {
+      if (err) {
+        console.log('there was an error in the database');
+      } else if (object === null) {
+        console.log('nothing in the database!');
+      } else if (Math.abs(object.latitude - req.body.latitude) < 1 && Math.abs(object.longitude - req.body.longitude) < 1) {
+         if (object.img === '') {
+            object.img = []
+          } else { 
+            object.img = object.img.split(',');
+          }
+          console.log('test this out', object.img)
+        placesObj.push(object);
+      }
+    });
+  }
   var googleOpenNow = '';
   if (req.body.openNow !== undefined) {
     googleOpenNow = '&opennow';
@@ -91,7 +109,6 @@ function getPlaces(req, res) {
   return new Promise((resolve, reject) => {
     request(link, function(error, response, body) {
       if (!error && response.statusCode === 200) {
-        var placesObj = [];
         var googleResults = JSON.parse(body);
         googleResults.results.forEach(function(result, index) {
             var googleLat = findXDistance(initLat, result.geometry.location.lat);
@@ -127,29 +144,6 @@ function getPlaces(req, res) {
       }
     });
   });
-}
-
-function getPlace(req, res) {
-  var results = [];
-  console.log('first time i went thoguth here', results)
-    for (var i = 1; i <= counter; i++) {
-      redis.hgetall(`place${i}`, function(err, object) {
-        if (err) {
-          console.log('there was an error in the database');
-        } else if (object === null) {
-          console.log('nothing in the database!');
-        } else if (Math.abs(object.latitude - req.body.latitude) < 1 && Math.abs(object.longitude - req.body.longitude) < 1) {
-          results.push(object);
-        }
-      });
-    if (i === counter) {
-      redis.hgetall(`place${counter}`, function() {
-        console.log('second time i went thoguth here', results)
-        res.send(results);
-      });
-    }
-  }
-  // check through all of the database
 }
 
 
@@ -199,6 +193,22 @@ function eventsFilter(obj, string) {
 }
 
 function getEvents(req, res) {
+  var eventObj = [];
+  for (var i = 1; i <= counter; i++) {
+    redis.hgetall(`event${i}`, function(err, object) {
+      if (err) { throw err;
+      } else if (object === null) {
+        console.log('nothing in the database!');
+      } else if (Math.abs(object.latitude - req.body.latitude) < 1 && Math.abs(object.longitude - req.body.longitude) < 1) {
+         if (object.img === '') {
+            object.img = []
+          } else { 
+            object.img = object.img.split(',');
+          }
+        eventObj.push(object);
+      }
+    });
+  }
   checkInit(req);
   var startDate = new Date();
   var endDate = new Date();
@@ -213,7 +223,6 @@ function getEvents(req, res) {
         reject(error);
       } else {
         if (!error && response.statusCode === 200) {
-          var eventObj = [];
           var eventsResults = JSON.parse(body);
           if (eventsResults.events !== null && eventsResults.events.event[0] !== undefined) {
           eventsResults.events.event.forEach(function(event) {
@@ -238,7 +247,7 @@ function getEvents(req, res) {
             var address = event.venue_address;
             if (address !== null) {
               address = event.venue_address.replace(/'/g, '');
-              venue = event.venue_name.replace(/#&39/g, '');
+              address = event.venue_name.replace(/#&39/g, '');
             }
 
             var description = event.description;
@@ -273,6 +282,8 @@ function getEvents(req, res) {
 
   });
 }
+
+
 
 function getPhotos(req, res) {
   var flickrApiKey = '0067ef61b0e0fe17b2d46892a314223b';

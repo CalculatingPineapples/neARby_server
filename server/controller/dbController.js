@@ -26,42 +26,64 @@ function createPlace(req, res) {
         'longitude': req.body.longitude,
         'lat': req.body.lat,
         'lon': req.body.lon,
-        'distance': req.body.distance,
+        'distance': Math.floor(req.body.distance),
         'username': req.body.username,
         'type': req.body.type,
         'upvotes': req.body.upvotes,
         'downvotes': req.body.downvotes,
+        'img': req.body.img
       });
+      var copy = Object.assign({}, req.body);
+      copy.id = `eventd${counter}`;
       counter++;
       redis.lpush(req.body.username, counter);
-      console.log(req.body)
-      res.send(req.body);
+      res.send(copy);
     }
   });
 }
 
 function votePlaces(req, res) {
-  if (req.body.vote > 5) {
-    redis.persist(req.body.name);
+  console.log('got in vote Events: ', req.body);
+  var copy = Object.assign({}, req.body);
+  var vote = req.body.upvotes - req.body.downvotes;
+  if (req.body.vote === 'upvote') {
+    vote++;
+    copy.upvotes = Number(copy.upvotes) + 1;
   } else {
-    redis.expire(req.body.name, 2700);
+    vote--;
+    copy.downvotes = Number(copy.downvotes) + 1;
   }
-  redis.hmset('places', {
-    vote: req.body.vote
-  });
+  if (vote > 5) {
+    // redis.persist(req.body.id);
+  } else {
+    redis.expire(req.body.id, 2700);
+  }
+  console.log('test', copy)
+  res.send(copy);
 }
 
 function voteEvents(req, res) {
-  if (req.body.vote > 5) {
-    redis.expire(req.body.end);
+  console.log('got in vote Events: ', req.body);
+  var copy = Object.assign({}, req.body);
+  var vote = req.body.upvotes - req.body.downvotes;
+  if (req.body.vote === 'upvote') {
+    vote++;
+    copy.upvotes = Number(copy.upvotes) + 1;
   } else {
-    redis.expire(req.body.name, 2700);
+    vote--;
+    copy.downvotes = Number(copy.downvotes) + 1;
   }
+  if (vote > 5) {
+    // redis.persist(req.body.id);
+  } else {
+    redis.expire(req.body.id, 2700);
+  }
+  console.log('test', copy)
+  res.send(copy);
 }
 
 function getPlace(req, res) {
   var results = [];
-  console.log('first time i went thoguth here', results)
   // check through all of the database
     for (var i = 1; i <= counter; i++) {
       redis.hgetall(`place${i}`, function(err, object) {
@@ -70,12 +92,14 @@ function getPlace(req, res) {
         } else if (object === null) {
           console.log('nothing in the database!');
         } else if (Math.abs(object.latitude - req.body.latitude) < 1 && Math.abs(object.longitude - req.body.longitude) < 1) {
+          if (object.img !== '') {
+            object.img = object.img.split(',');
+          }
           results.push(object);
         }
       });
     if (i === counter) {
       redis.hgetall(`place${counter}`, function() {
-        console.log('second time i went thoguth here', results)
         res.send(results);
       });
     }
@@ -102,13 +126,17 @@ function createEvent(req, res) {
         'username': req.body.username,
         'lat': req.body.lat,
         'lon': req.body.lon,
-        'distance': req.boyd.distance,
+        'distance': Math.floor(req.body.distance),
         'type': req.body.type,
         'upvotes': 0,
         'downvoted': 0,
+        'img': req.body,
       });
+      var copy = Object.assign({}, req.body)
+      copy.id = `eventd${counter}`;
+      counter++;
       redis.lpush(req.body.user, counter);
-      res.send(req.body);
+      res.send(copy);
     }
   });
 }
@@ -121,6 +149,9 @@ function getEvent(req, res){
       } else if (object === null) {
         console.log('nothing in the database!');
       } else if (Math.abs(object.latitude - req.body.latitude) < 1 && Math.abs(object.longitude - req.body.longitude) < 1) {
+      if (object.img !== '') {
+        object.img = object.img.split('');
+      }
         results.push(object);
       }
     });
