@@ -200,21 +200,25 @@ function getEvents(req, res) {
             var name = event.title;
             if (name !== null) {
               name = event.title.replace(/'/g, '');
+              name = event.title.replace(/#&39/g, '');
             }
 
             var venue = event.venue_name;
             if (venue !== null) {
               venue = event.venue_name.replace(/'/g, '');
+              venue = event.venue_name.replace(/#&39/g, '');
             }
 
             var address = event.venue_address;
             if (address !== null) {
               address = event.venue_address.replace(/'/g, '');
+              venue = event.venue_name.replace(/#&39/g, '');
             }
 
             var description = event.description;
             if (description !== null) {
               description = event.description.replace(/'/g, '');
+              description = event.description.replace(/#&39/g, '');
             }
 
             var place = {
