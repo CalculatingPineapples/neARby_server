@@ -1,6 +1,8 @@
 var request = require('request');
 var initLon = null;
 var initLat = null;
+var redis = require('./dbController');
+var counter = require('./dbController')
 
 function deg2rad(deg) {
   return deg * (Math.PI / 180);
@@ -127,6 +129,30 @@ function getPlaces(req, res) {
   });
 }
 
+function getPlace(req, res) {
+  var results = [];
+  console.log('first time i went thoguth here', results)
+    for (var i = 1; i <= counter; i++) {
+      redis.hgetall(`place${i}`, function(err, object) {
+        if (err) {
+          console.log('there was an error in the database');
+        } else if (object === null) {
+          console.log('nothing in the database!');
+        } else if (Math.abs(object.latitude - req.body.latitude) < 1 && Math.abs(object.longitude - req.body.longitude) < 1) {
+          results.push(object);
+        }
+      });
+    if (i === counter) {
+      redis.hgetall(`place${counter}`, function() {
+        console.log('second time i went thoguth here', results)
+        res.send(results);
+      });
+    }
+  }
+  // check through all of the database
+}
+
+
 function dateFormat(date) {
   var day = date.getDate();
   if ((date.getDate()) <= 9) {
@@ -200,21 +226,25 @@ function getEvents(req, res) {
             var name = event.title;
             if (name !== null) {
               name = event.title.replace(/'/g, '');
+              name = event.title.replace(/#&39/g, '');
             }
 
             var venue = event.venue_name;
             if (venue !== null) {
               venue = event.venue_name.replace(/'/g, '');
+              venue = event.venue_name.replace(/#&39/g, '');
             }
 
             var address = event.venue_address;
             if (address !== null) {
               address = event.venue_address.replace(/'/g, '');
+              venue = event.venue_name.replace(/#&39/g, '');
             }
 
             var description = event.description;
             if (description !== null) {
               description = event.description.replace(/'/g, '');
+              description = event.description.replace(/#&39/g, '');
             }
 
             var place = {

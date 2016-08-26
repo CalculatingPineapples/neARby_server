@@ -1,7 +1,10 @@
-var db = require('redis');
-var url = require('url');
-var redisURL = url.parse(process.env.REDISCLOUD_URL);
-var redis = db.createClient(redisURL.port, redisURL.hostname, {no_ready_check: true});
+var redis;
+if (process.env.REDISTOGO_URL){
+  var rtg = require('url').parse(process.env.REDISTOGO_URL);
+  redis = require('redis').createClient(rtg.port, rtg.hostname);
+} else {
+  redis = require('redis').createClient();
+}
 
 var counter = 1;
 
@@ -136,4 +139,6 @@ module.exports = {
   getEvent,
   votePlaces,
   voteEvents,
+  counter,
+  redis
 };
